@@ -1,33 +1,66 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { ResearchIdea } from "@/types/research"
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { ResearchIdea } from "@/types/research";
 
 export function ResearchResults() {
   const [researchData, setResearchData] = useState<{
-    ideas: ResearchIdea[]
-    sources: string[]
-  } | null>(null)
+    ideas: ResearchIdea[];
+    sources: string[];
+  } | null>(null);
+  const [storageChanged, setStorageChanged] = useState(false);
 
   useEffect(() => {
-    // Get research data from localStorage on client side
-    const storedData = localStorage.getItem("researchData")
+    // Function to update research data from localStorage
+    const updateResearchData = () => {
+      const storedData = localStorage.getItem("researchData");
+      if (storedData) {
+        setResearchData(JSON.parse(storedData));
+      }
+    };
+
+    // Initial load of research data
+    updateResearchData();
+
+    // Add event listener for storage changes
+    const handleStorageChange = () => {
+      setStorageChanged((prev) => !prev);
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Update research data when storageChanged state changes
+    const storedData = localStorage.getItem("researchData");
     if (storedData) {
-      setResearchData(JSON.parse(storedData))
+      setResearchData(JSON.parse(storedData));
     }
-  }, [])
+  }, [storageChanged]);
 
   if (!researchData || researchData.ideas.length === 0) {
-    return null
+    return null;
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Research Results</CardTitle>
-        <CardDescription>Generated ideas and sources based on your input</CardDescription>
+        <CardDescription>
+          Generated ideas and sources based on your input
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="ideas">
@@ -36,9 +69,13 @@ export function ResearchResults() {
             <TabsTrigger value="sources">Sources</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="ideas" className="space-y-4 mt-4">
+          <TabsContent
+            value="ideas"
+            className="space-y-4 mt-4">
             {researchData.ideas.map((idea, index) => (
-              <div key={index} className="border rounded-lg p-4">
+              <div
+                key={index}
+                className="border rounded-lg p-4">
                 <h3 className="font-medium text-lg">{idea.title}</h3>
                 <p className="text-muted-foreground mt-2">{idea.description}</p>
                 {idea.considerations && (
@@ -55,7 +92,9 @@ export function ResearchResults() {
             ))}
           </TabsContent>
 
-          <TabsContent value="sources" className="mt-4">
+          <TabsContent
+            value="sources"
+            className="mt-4">
             <div className="border rounded-lg p-4">
               <h3 className="font-medium mb-2">Sources Used</h3>
               {researchData.sources.length > 0 ? (
@@ -65,13 +104,14 @@ export function ResearchResults() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-muted-foreground">No specific sources were used.</p>
+                <p className="text-muted-foreground">
+                  No specific sources were used.
+                </p>
               )}
             </div>
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }
-

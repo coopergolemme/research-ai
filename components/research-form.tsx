@@ -1,44 +1,48 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { generateResearchIdeas } from "@/app/actions"
-import { Loader2 } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { generateResearchIdeas } from "@/app/actions";
+import { Loader2 } from "lucide-react";
 
 export function ResearchForm() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [files, setFiles] = useState<File[]>([])
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault(); // Prevent default form submission
+    setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
     try {
-      setIsLoading(true)
-      await generateResearchIdeas(formData)
-      router.refresh()
+      await handleGenerateResearchIdeas(formData);
+      router.refresh();
     } catch (error) {
-      console.error("Error generating research ideas:", error)
+      console.error("Error generating research ideas:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files))
+      setFiles(Array.from(e.target.files));
     }
   }
 
   return (
     <Card className="w-full">
       <CardContent className="pt-6">
-        <form action={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="prompt">Research Topic/Question</Label>
             <Textarea
@@ -61,11 +65,16 @@ export function ResearchForm() {
               onChange={handleFileChange}
             />
             {files.length > 0 && (
-              <div className="text-sm text-muted-foreground mt-2">{files.length} file(s) selected</div>
+              <div className="text-sm text-muted-foreground mt-2">
+                {files.length} file(s) selected
+              </div>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -78,6 +87,14 @@ export function ResearchForm() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
 
+async function handleGenerateResearchIdeas(formData) {
+  try {
+    const researchData = await generateResearchIdeas(formData);
+    localStorage.setItem("researchData", JSON.stringify(researchData));
+  } catch (error) {
+    console.error("Failed to generate research ideas:", error);
+  }
+}
